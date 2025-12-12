@@ -1,3 +1,7 @@
+import streamlit as st
+
+
+
 def plot_bar(df, col_x, col_y, title=None):
     plt.figure()
     plt.bar(df[col_x], df[col_y])
