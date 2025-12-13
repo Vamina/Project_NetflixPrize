@@ -73,7 +73,7 @@ def clean_for_wordcloud(text: str) -> List[str]:
     return text.split()
 
 
-def generate_wordcloud(words: List[str]) -> None:
+def generate_wordcloud(words: List[str]):
     """
     Generate and display a word cloud from a list of words.
 
@@ -84,18 +84,20 @@ def generate_wordcloud(words: List[str]) -> None:
 
     Returns
     -------
-    None
-        Displays the word cloud plot via matplotlib.
+    matplotlib.figure.Figure
+        The matplotlib figure containing the word cloud.
     """
     joined = " ".join(words)
     wc = WordCloud(width=1200, height=800, background_color="white")
     wc = wc.generate(joined)
 
-    plt.figure(figsize=(12, 8))
-    plt.imshow(wc, interpolation="bilinear")
-    plt.axis("off")
-    plt.tight_layout()
+    fig, ax = plt.subplots(figsize=(12, 8))
+    ax.imshow(wc, interpolation="bilinear")
+    ax.axis("off")
+    fig.tight_layout()
     plt.show()
+
+    return fig
 
 
 URL = (
@@ -126,3 +128,4 @@ else:
     words = [w for w in words if w not in STOPWORDS]
 
     generate_wordcloud(words)
+
