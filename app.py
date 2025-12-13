@@ -71,11 +71,6 @@ sns.regplot(
 )
 
 
-
-
-
-
-
 plt.title(f'Linear Fit: Rating Volume vs. Average Rating')
 plt.xlabel('Number of Ratings Given by Customer')
 plt.ylabel('Average Rating Given by Customer')
