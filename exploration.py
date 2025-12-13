@@ -1,6 +1,6 @@
 import streamlit as st
 from data_loader import load_data, get_df
-from plotting_utils import plot_seaborn_histogram, plot_plotly_pie, plot_bar
+from plotting_utils import plot_seaborn_histogram, plot_plotly_pie, plot_bar, plot_plotly_bar_ranking, plot_genre_rating_heatmap, plot_animated_rating_evolution, plot_stacked_activity_rating_count
 
 st.set_page_config(
     page_title="Dataset Exploration",
@@ -12,6 +12,7 @@ st.set_page_config(
 data_store = load_data()
 df = get_df(data_store, 'main_df')
 movies_by_rating = get_df(data_store, 'movies_by_rating')
+genre_analysis_df = get_df(data_store, 'genre_analysis_df')
 
 st.title("The Netflix Prize Dataset Exploration")
 
@@ -117,12 +118,13 @@ with st.container():
         title=f"Distribution by {pie_category_col.replace('_', ' ').title()}"
     )
 
+#BAR PLOTS 
 
 st.header(" Metric Comparison (Count or Average)")
 
 st.sidebar.header(" Metric Plot Controls")
 
-METRIC_COLS = ['decade', 'activity_level', 'genre'] 
+METRIC_COLS = ['decade', 'activity_level', 'genres'] 
 available_metric_cols = [col for col in METRIC_COLS if col in df.columns]
 
 if not available_metric_cols:
@@ -151,5 +153,98 @@ with st.container():
         df=df,
         category_col=metric_category_col,
         metric_type=metric_type,
-        title=f"{metric_type} by {metric_category_col.replace('_', ' ').title()}"
+        title=f"{metric_type} by {metric_category_col.replace('_', ' ').title()}",
+        genre_analysis_df=genre_analysis_df
     )
+
+
+# ----------------------------------------------------
+#Stacked Count of Ratings by Activity Level
+# ----------------------------------------------------
+st.header("Ratings by customer activity level")
+st.markdown("This chart visualizes how many ratings fall into each Rating Category (Low, Neutral, High) across different Activity Levels (Low, Medium, High).")
+
+if not df.empty:
+    with st.container():
+        plot_stacked_activity_rating_count(
+            df=df, 
+            title="Total Ratings Count by Activity Level and Rating Category"
+        )
+else:
+    st.warning("Main DataFrame is required for this stacked bar chart.")
+
+
+
+
+# ----------------------------------------------------
+# Correlation heatmap, rating and genres 
+# ----------------------------------------------------
+st.header("Feature Correlation Heatmap")
+
+st.info("The heatmap below shows the correlation between the movie rating, and the presence of each genre. Since a movie can have multiple genres, multi-hot encoding is used.")
+
+with st.container():
+    plot_genre_rating_heatmap(
+        df=df, # Pass your main DataFrame
+        title="Correlation Matrix: Rating and Genres"
+    )
+
+
+# ----------------------------------------------------
+# Movie Ranking by weighted rating 
+# ----------------------------------------------------
+st.header("Title Ranking by weighted rating ")
+st.sidebar.header("Ranking Plot Controls")
+
+
+# 1. Data Preparation: 
+ranking_df = movies_by_rating.copy()
+
+# Ensure the ranking is performed on a full dataset first before slicing
+ranking_df = ranking_df.sort_values(by='weighted_rating', ascending=False)
+
+
+# 2. Base Limit (Top 20): Filter the data to the top 20 ranked entries
+ranking_base = ranking_df.head(20)
+
+
+# 3. Sidebar Slider for Visualization Count
+num_to_display = st.sidebar.slider(
+    "Select number of top movies to visualize:",
+    min_value=1,
+    max_value=20,
+    value=10, # Default to showing the top 15
+    step=1
+)
+
+# 4. Final Filtering based on Slider
+final_ranking_df = ranking_base.head(num_to_display)
+
+# 5. Visualization: Call your ranking function
+with st.container():
+    plot_plotly_bar_ranking(
+        df=final_ranking_df,
+        x_col='weighted_rating',  # X-axis is now the Weighted Rating
+        y_col='title', 
+        title=f"Top {num_to_display} Titles by Weighted Rating",
+        ascending_order=False # Highest rated movie (highest bar) goes to the top
+    )
+
+
+
+
+st.header("Animated Rating Evolution of Top 10 Movies")
+st.info("Watch the yearly average rating change for the Top 10 highest-rated movies (by Weighted Rating).")
+
+# CRITICAL CHECK: Ensure both required DataFrames are present before calling the plot
+if not df.empty and not movies_by_rating.empty:
+    with st.container():
+        plot_animated_rating_evolution(
+            # df_main is the full history of all ratings
+            df_main=df, 
+            
+            # movies_by_rating is the stats DF used to determine the top 10 movies
+            movies_by_rating=movies_by_rating
+        )
+else:
+    st.warning("Cannot display animated chart: Both main data (df) and movie statistics (movies_by_rating_df) are required.")
