@@ -6,6 +6,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
+from article_netflix import get_wordcloud_figure_from_url 
 
 # --- Matplotlib/Seaborn Functions ---
 
@@ -492,3 +493,12 @@ def plot_stacked_activity_rating_count(df, title):
     
     # Display in Streamlit
     st.plotly_chart(fig, use_container_width=True)
+
+
+
+
+#WORDCLOUD 
+
+@st.cache_data
+def load_wordcloud_figure(url):
+    return get_wordcloud_figure_from_url(url)

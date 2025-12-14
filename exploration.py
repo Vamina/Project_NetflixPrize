@@ -1,6 +1,16 @@
 import streamlit as st
 from data_loader import load_data, get_df
-from plotting_utils import plot_seaborn_histogram, plot_plotly_pie, plot_bar, plot_plotly_bar_ranking, plot_genre_rating_heatmap, plot_animated_rating_evolution, plot_stacked_activity_rating_count
+from bs4 import BeautifulSoup
+import matplotlib.pyplot as plt
+from plotting_utils import (
+    plot_seaborn_histogram, 
+    plot_plotly_pie, 
+    plot_bar, 
+    plot_plotly_bar_ranking,
+    plot_genre_rating_heatmap, 
+    plot_animated_rating_evolution, 
+    plot_stacked_activity_rating_count,
+    load_wordcloud_figure)
 
 st.set_page_config(
     page_title="Dataset Exploration",
@@ -247,4 +257,43 @@ if not df.empty and not movies_by_rating.empty:
             movies_by_rating=movies_by_rating
         )
 else:
-    st.warning("Cannot display animated chart: Both main data (df) and movie statistics (movies_by_rating_df) are required.")
+    st.warning("Cannot display animated chart: Both main data (df) and movie statistics (movies_by_rating) are required.")
+
+
+
+# WORDCLOUD 
+st.title("Word Cloud Visualization")
+
+
+FIXED_ARTICLE_URL = "https://www.theguardian.com/media/2025/aug/28/bland-easy-to-follow-for-fans-of-everything-what-has-the-netflix-algorithm-done-to-our-films"
+
+
+
+
+# 1. Input Widget: this is a read-only input box that shows the article we used 
+st.text_input(
+    "Source Article URL:", 
+    value=FIXED_ARTICLE_URL,
+    disabled=True, # Makes the box read-only
+    label_visibility="visible"
+)
+
+st.header("Generated Word Cloud")
+
+# --- Start Automatic Figure Generation/Display ---
+try:
+    # 3. Call the function using the FIXED_ARTICLE_URL
+    with st.spinner('Scraping and generating Word Cloud...'):
+        figure = load_wordcloud_figure(FIXED_ARTICLE_URL)
+    
+    # 4. Display the result
+    if figure:
+        st.pyplot(figure)
+        plt.close(figure)
+        
+    else:
+        # Fallback for scraping failure
+        st.error("Error: Could not find article content or generate the figure for the fixed URL.")
+
+except Exception as e:
+    st.error(f"An unexpected error occurred during processing: {e}")

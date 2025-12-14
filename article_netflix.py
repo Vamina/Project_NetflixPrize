@@ -95,37 +95,49 @@ def generate_wordcloud(words: List[str]):
     ax.imshow(wc, interpolation="bilinear")
     ax.axis("off")
     fig.tight_layout()
-    plt.show()
+    #plt.show()
 
     return fig
 
 
-URL = (
-    "https://www.theguardian.com/media/2025/aug/28/bland-easy-to-follow-for-fans-"
-    "of-everything-what-has-the-netflix-algorithm-done-to-our-films"
-)
 
-HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-        "(KHTML, like Gecko) Chrome/121.0 Safari/537.36"
+def get_wordcloud_figure_from_url(url: str):
+
+
+
+# run this if we are running the main script and not calling it from the streamlit app 
+
+   
+    HEADERS = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/121.0 Safari/537.36"
+        )
+    }
+
+    response = requests.get(url, headers=HEADERS)
+    soup = BeautifulSoup(response.text, "html.parser")
+    article = soup.find("article")
+
+
+    if not article:
+        return None 
+    else:
+        paragraphs = [p.get_text(" ", strip=True) for p in article.find_all("p")]
+        cleaned = [re.sub(r"\s+", " ", para).strip() for para in paragraphs]
+        cleaned = [fix_first_word(p) for p in cleaned]
+        full_text = " ".join(cleaned)
+
+        words = clean_for_wordcloud(full_text)
+        words = [w for w in words if w not in STOPWORDS]
+
+        return generate_wordcloud(words)
+
+if __name__ == '__main__':
+    URL = (
+        "https://www.theguardian.com/media/2025/aug/28/bland-easy-to-follow-for-fans-"
+        "of-everything-what-has-the-netflix-algorithm-done-to-our-films"
     )
-}
 
-response = requests.get(URL, headers=HEADERS)
-soup = BeautifulSoup(response.text, "html.parser")
-article = soup.find("article")
-
-if not article:
-    print("Article tag not found.")
-else:
-    paragraphs = [p.get_text(" ", strip=True) for p in article.find_all("p")]
-    cleaned = [re.sub(r"\s+", " ", para).strip() for para in paragraphs]
-    cleaned = [fix_first_word(p) for p in cleaned]
-    full_text = " ".join(cleaned)
-
-    words = clean_for_wordcloud(full_text)
-    words = [w for w in words if w not in STOPWORDS]
-
-    generate_wordcloud(words)
+    fig = get_wordcloud_figure_from_url(URL)
 
