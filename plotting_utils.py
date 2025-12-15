@@ -8,45 +8,76 @@ from plotly.subplots import make_subplots
 import numpy as np
 from article_netflix import get_wordcloud_figure_from_url 
 
-# --- Matplotlib/Seaborn Functions ---
 
-def plot_seaborn_histogram(df, x_col, bins, title):
+# HISTOGRAM FUNCTION WITH PLOTLY EXPRESS 
+def plot_plotly_histogram(df, x_col, bins, title):
+    """
+    Generates a histogram for the numerical variables of the dataset 
+    """
     
-
-    a4_dims = (6,4)  
-    fig, ax = plt.subplots(figsize=a4_dims)
-
-    # 2. Seaborn Plotting Logic
-    sns.histplot(
-        data=df,
+    # 1. Create the Plotly Express Histogram
+    fig = px.histogram(
+        df,
         x=x_col,
-        discrete=False,
-        bins=bins,
-        lw=2,
-        kde=False,
-        stat='count',
-        color='orange',
-        edgecolor='red',
-        alpha=0.7,
-        ax=ax # IMPORTANT: Pass the axis object to seaborn
+        nbins=bins, # Use nbins for the number of bins
+        title=title,
+        opacity=0.7, # Corresponds to the 'alpha' setting
+        color_discrete_sequence=['#21918c'], # Set the bar color
+        labels={x_col: x_col.replace('_', ' ').title(), 'count': 'Count'}
     )
     
-    # 3. Formatting
-    ax.set_title(title, fontsize = 10)
-    ax.set_xlabel(x_col.replace('_', ' ').title(), fontsize = 10)
-    ax.set_ylabel('Count', fontsize = 10)
-    plt.tight_layout()
+
+    # 2. Conditional Fix for Discrete 'rating' Variable
+    if x_col == 'rating':
+        # This fix forces the bars to align exactly with the integers (1, 2, 3, 4, 5)
+        # by setting custom bins that center on each integer.
+        
+        # Manually set the binning: start at 0.5, end at 5.5, size 1.0
+        fig.update_traces(
+            xbins=dict( 
+                start=0.5, 
+                end=5.5, 
+                size=1.0
+            )
+        )
+
+        # Force the X-axis ticks to show only the integer ratings (1, 2, 3, 4, 5)
+        fig.update_xaxes(
+            tickmode='array',
+            tickvals=[1, 2, 3, 4, 5],
+            range=[0.5, 5.5]
+        )
+    # 2. Update Axes and Layout 
     
+    # Set the y-axis title to 'Count' and the x-axis title 
+    # using the cleaned column name (x_col.replace('_', ' ').title())
+    fig.update_layout(
+        # Set titles
+        xaxis_title=x_col.replace('_', ' ').title(),
+        yaxis_title='Count',
+        
+        template='plotly_white',
+        
+        # Adjusting font size to match your old plot (if necessary)
+        font=dict(size=10),
+        
+        # Set bar edge color (Plotly uses lines/borders)
+        bargap=0.05 # Small gap between bars
+    )
     
-    # 4. Streamlit Display
-    st.pyplot(fig, use_container_width=True)
-    plt.close(fig) # Close the figure to free memory
+    # Display the chart via Streamlit
+    st.plotly_chart(fig, use_container_width=True)
 
 
 
-#PIE CHARTS 
+# PIE CHART FUNCTION WITH PLOTLY EXPRESS 
+
+
 def plot_plotly_pie(df, category_col, title):
-
+    """
+    Generates a  pie chart for the categorical variables 
+    """
+    
     # 1. Calculate counts
     category_counts = df[category_col].value_counts().reset_index()
     category_counts.columns = [category_col, 'Count']
@@ -75,7 +106,7 @@ def plot_plotly_pie(df, category_col, title):
         names=category_col,
         values='Count',
         title=title,
-        color_discrete_sequence=px.colors.sequential.Agsunset,
+        color_discrete_sequence=px.colors.sequential.Viridis_r,
         template='plotly_white'
     )
     
@@ -109,15 +140,9 @@ def plot_plotly_pie(df, category_col, title):
 
 
 
-# BAR PLOTS 
+# BAR PLOT AGGREGATING FUNCTION WITH PLOTLY EXPRESS  
 
-
-
-
-
-
-
-def plot_bar(df, category_col, metric_type, title, genre_analysis_df=None):
+def plot_plotly_bar(df, category_col, metric_type, title, genre_analysis_df=None):
     """
     Generates a single bar chart for either Count or Average Rating 
     for a selected category.
@@ -146,16 +171,13 @@ def plot_bar(df, category_col, metric_type, title, genre_analysis_df=None):
     else: 
     # 1. Data Aggregation: Calculate Count and Average Rating
         metric_df = df.groupby(category_col).agg(
-         rating_count=('rating', 'count'),
+        rating_count=('rating', 'count'),
             rating_avg=('rating', 'mean')
         ).reset_index()
 
     # Sort the results by the selected metric (descending)
     metric_df = metric_df.sort_values(by=metric_col_name, ascending=False)
     
-    # Limit to top N categories for cleaner viewing
-    N_LIMIT = 20  
-    metric_df = metric_df.head(N_LIMIT)
     
     # Ensure the category column is a string for plotting stability
     metric_df[category_col] = metric_df[category_col].astype(str)
@@ -168,7 +190,7 @@ def plot_bar(df, category_col, metric_type, title, genre_analysis_df=None):
         y=metric_col_name,
         title=title,
         color=metric_col_name, # Use the metric for coloring depth
-        color_continuous_scale=px.colors.sequential.Sunsetdark,
+        color_continuous_scale=px.colors.sequential.Viridis_r,
         template='plotly_white'
     )
 
@@ -189,34 +211,12 @@ def plot_bar(df, category_col, metric_type, title, genre_analysis_df=None):
 
 
 
-
-
-def plot_plotly_vertical_bar(df, x_col, y_col, title, order=None):
-  
-    fig = px.bar(
-        df,
-        x=x_col,
-        y=y_col,
-        orientation='v', # Explicitly vertical (default, but good for clarity)
-        title=title,
-        color=y_col, 
-        color_continuous_scale=px.colors.sequential.Rocket,
-    )
-    
-    # Ensure X-axis (Decades) is ordered chronologically
-    fig.update_layout(
-        xaxis={'categoryorder': 'array', 'categoryarray': order if order else df[x_col].unique()},
-        title_x=0.5,
-        xaxis_title=x_col.replace('_', ' ').title(),
-        yaxis_title=y_col.replace('_', ' ').title(),
-        height=500
-    )
-    
-    st.plotly_chart(fig, use_container_width=True)
-
+# HORIZONTAL BAR PLOT FUNCTION FOR TITLE RANKING WITH PLOTLY 
 
 def plot_plotly_bar_ranking(df, x_col, y_col, title, ascending_order=True):
-
+    """
+    generates a horizontal bar plot with specified order 
+    """
     fig = px.bar(
         df,
         x=x_col,
@@ -224,7 +224,7 @@ def plot_plotly_bar_ranking(df, x_col, y_col, title, ascending_order=True):
         orientation='h',  # <--- THIS MAKES IT HORIZONTAL
         title=title,
         color=x_col, # Color bars based on the numerical value
-        color_continuous_scale=px.colors.sequential.Viridis,
+        color_continuous_scale=px.colors.sequential.Viridis_r,
     )
     
     # Invert the axis if descending order is desired for visual ranking (highest bar at top)
@@ -257,16 +257,14 @@ def plot_plotly_bar_ranking(df, x_col, y_col, title, ascending_order=True):
     st.plotly_chart(fig, use_container_width=True)
 
 
-# HEATMAP 
+# CORRELATION MATRIX HEATMAP WITH SEABORN 
 
 def plot_genre_rating_heatmap(df, title):
     """
     Generates a full correlation matrix heatmap showing the relationship 
-    between 'rating' and all multi-hot encoded genres ONLY.
+    between 'rating' and all multi-hot encoded genres. 
+    Not customizable. 
     
-    Args:
-        df (pd.DataFrame): The main DataFrame containing 'rating' and 'genres'.
-        title (str): The title for the heatmap.
     """
     
     # Check for required columns
@@ -316,7 +314,7 @@ def plot_genre_rating_heatmap(df, title):
     fig, ax = plt.subplots(figsize=(14, 8)) 
     
     sns.heatmap(df_corr_matrix,
-                cmap="coolwarm",
+                cmap="GnBu",
                 annot=False, 
                 fmt=".2f",
                 vmin=-1,
@@ -335,11 +333,73 @@ def plot_genre_rating_heatmap(df, title):
 
 
 
+# STACKED BAR PLOT FUNCTION WITH PLOTLY EXPRESS 
+def plot_stacked_activity_rating_count(df, title):
+    """
+    Generates a vertical bar plot per customer  activity level  with stacked bars - colors correspond to ranking category.
+    """
+    # 1. Check for required columns
+    required_cols = ['activity_level', 'rating_category']
+    if not all(col in df.columns for col in required_cols):
+        st.error(f"Cannot create Stacked Bar Chart: Missing one or more required columns ({required_cols}).")
+        return
+
+    # 2. Aggregate Data
+    # Calculate the count of ratings for each combination of Activity Level and Rating Category
+    plot_data = (
+        df.groupby(required_cols)
+        .size() # Counts the number of rows (ratings) in each group
+        .reset_index(name='rating_count')
+    )
+    
+    activity_order = ['Low', 'Medium', 'High']
+    category_order = ['Low', 'Neutral', 'High']
+    
+    # 3. Create the Plotly Stacked Bar Chart
+    fig = px.bar(
+        plot_data,
+        x='activity_level',
+        y='rating_count',
+        color='rating_category',
+        title=title,
+        
+        # Ensure the categories are sorted correctly (Low, Medium, High)
+        category_orders={
+            'activity_level': activity_order,
+            'rating_category': category_order
+        },
+        
+        # Set the color mapping explicitly to ensure the stack order is intuitive
+        color_discrete_map={
+            'Low': '#fde725',   
+            'Neutral': '#21918c',  
+            'High': '#440154'    
+        },
+        labels={
+            'activity_level': 'Customer Activity Level',
+            'rating_count': 'Total Count of Ratings',
+            'rating_category': 'Rating Category'
+        }
+    )
+    
+    # 4. Final Formatting
+    fig.update_layout(
+        xaxis_title="User Activity Level",
+        yaxis_title="Total Count of Ratings",
+        legend_title="Rating Category"
+    )
+    
+    # Display in Streamlit
+    st.plotly_chart(fig, use_container_width=True)
 
 
 
+# ANIMATED BAR PLOT WITH PLOTLY EXPRESS 
 def plot_animated_rating_evolution(df_main, movies_by_rating):
+    """
+    Creates an animated bar plot showing average ranking across years (date of ranking). Not customizable. 
 
+    """
     
     
     N_TOP = 10 
@@ -436,63 +496,6 @@ def plot_animated_rating_evolution(df_main, movies_by_rating):
     st.plotly_chart(fig, use_container_width=True)
 
 
-
-
-def plot_stacked_activity_rating_count(df, title):
-
-    # 1. Check for required columns
-    required_cols = ['activity_level', 'rating_category']
-    if not all(col in df.columns for col in required_cols):
-        st.error(f"Cannot create Stacked Bar Chart: Missing one or more required columns ({required_cols}).")
-        return
-
-    # 2. Aggregate Data
-    # Calculate the count of ratings for each combination of Activity Level and Rating Category
-    plot_data = (
-        df.groupby(required_cols)
-        .size() # Counts the number of rows (ratings) in each group
-        .reset_index(name='rating_count')
-    )
-    
-    activity_order = ['Low', 'Medium', 'High']
-    category_order = ['Low', 'Neutral', 'High']
-    
-    # 3. Create the Plotly Stacked Bar Chart
-    fig = px.bar(
-        plot_data,
-        x='activity_level',
-        y='rating_count',
-        color='rating_category',
-        title=title,
-        
-        # Ensure the categories are sorted correctly (Low, Medium, High)
-        category_orders={
-            'activity_level': activity_order,
-            'rating_category': category_order
-        },
-        
-        # Set the color mapping explicitly to ensure the stack order is intuitive
-        color_discrete_map={
-            'Low': '#EF553B',      # Reddish for Low Rating Category
-            'Neutral': '#FECB52',  # Yellowish for Neutral Rating Category
-            'High': '#00CC96'     # Greenish for High Rating Category
-        },
-        labels={
-            'activity_level': 'User Activity Level',
-            'rating_count': 'Total Count of Ratings',
-            'rating_category': 'Rating Category'
-        }
-    )
-    
-    # 4. Final Formatting
-    fig.update_layout(
-        xaxis_title="User Activity Level",
-        yaxis_title="Total Count of Ratings",
-        legend_title="Rating Category"
-    )
-    
-    # Display in Streamlit
-    st.plotly_chart(fig, use_container_width=True)
 
 
 

@@ -8,7 +8,6 @@ from bs4 import BeautifulSoup
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 
-
 STOPWORDS: Set[str] = {
     "the", "and", "a", "an", "in", "on", "of", "for", "to", "from", "with", "at",
     "by", "is", "it", "this", "that", "as", "be", "are", "was", "were", "or", "but",
@@ -90,6 +89,7 @@ def generate_wordcloud(words: List[str]):
     joined = " ".join(words)
     wc = WordCloud(width=1200, height=800, background_color="white")
     wc = wc.generate(joined)
+
 
     fig, ax = plt.subplots(figsize=(12, 8))
     ax.imshow(wc, interpolation="bilinear")

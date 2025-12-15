@@ -2,10 +2,12 @@ import streamlit as st
 from data_loader import load_data, get_df
 from bs4 import BeautifulSoup
 import matplotlib.pyplot as plt
+import pandas as pd 
+import numpy as np
 from plotting_utils import (
-    plot_seaborn_histogram, 
+    plot_plotly_histogram, 
     plot_plotly_pie, 
-    plot_bar, 
+    plot_plotly_bar, 
     plot_plotly_bar_ranking,
     plot_genre_rating_heatmap, 
     plot_animated_rating_evolution, 
@@ -26,17 +28,71 @@ genre_analysis_df = get_df(data_store, 'genre_analysis_df')
 
 st.title("The Netflix Prize Dataset Exploration")
 
+
+st.markdown("This app presents a subset of the Netflix Prize dataset. The Netflix dataset was originally released by Netflix for a competition aimed at improving their movie recommendation algorithm. It contains over over 100 million ratings from nearly 480,189 anonymous users across 17,770 movies. For this exploration, 500.000 lines of the original dataset were randomly sampled, and information as film title and genre have been added. ")
+
+
+
+### PART 1 PRESENTATION OF THE DATASET 
+
+st.header("The dataset", divider = "yellow")
+st.markdown("This view explains the columns and data types of the primary DataFrame (`df`) used across the application.")
+
+# --- A. Display Column Structure and Types ---
+st.subheader("DataFrame Columns and Data Types")
+
+# Create a simple DataFrame to display column names and dtypes clearly
+column_info = pd.DataFrame({
+    'Column Name': df.columns,
+    'Data Type': df.dtypes.astype(str)
+})
+
+st.dataframe(
+    column_info, 
+    hide_index=True, 
+    use_container_width=True,
+    # Optional: Set column widths for better display
+    column_config={
+        "Column Name": st.column_config.TextColumn(width="large"),
+        "Data Type": st.column_config.TextColumn(width="small"),
+    }
+)
+st.markdown(f"**Total Columns:** {df.shape[1]}")
+
+st.markdown("---")
+
+# --- B. Display Sample Data ---
+st.subheader("Sample Data (First 10 Rows)")
+st.caption("A small preview of the data content.")
+
+# Display the first 10 rows of the actual data
+st.dataframe(
+    df.head(10), 
+    use_container_width=True
+)
+
 if df.empty or movies_by_rating.empty:
     st.error("DataFrames for exploration are empty. Please check your data export and loading.")
     st.stop() # Stop the app execution if data is missing
 
+
+
+
+## PART 2 VISUALIZATION
+
+st.header("Data visualization", divider = "yellow")
+
+# SIDEBAR HEADER 
+
+st.sidebar.header("Plot controls ")
 # ----------------------------------------------------
-# SECTION 1: Histogram with Interactive Menu 
+# Histogram with Interactive Menu 
 # ----------------------------------------------------
-st.header("Variable distribution - histogram")
+st.subheader("Numerical distribution - Histogram")
+
 
 # --- Sidebar Controls for Section 1 ---
-st.sidebar.header("Histogram Controls")
+st.sidebar.subheader("Histogram Controls")
 
 HISTOGRAM_COLS = ['rating', 'year', 'rating_date']
 
@@ -80,7 +136,7 @@ histogram_bins = st.sidebar.slider(
 
 # --- Visualization ---
 with st.container():
-    plot_seaborn_histogram(
+    plot_plotly_histogram(
         df=df, 
         x_col=histogram_x_col, 
         bins=histogram_bins,
@@ -93,15 +149,15 @@ st.markdown("---")
 
 
 # ----------------------------------------------------
-# SECTION 2: Categorical Distribution 
+# Categorical Distribution 
 # ----------------------------------------------------
-st.header("Categorical Distribution - Pie Chart")
+st.subheader("Categorical Distribution - Pie Chart")
 
 # --- Sidebar Controls for Section 3 ---
-st.sidebar.header("Pie Chart Controls")
+st.sidebar.subheader("Pie Chart Controls")
 
 # Define columns for pie chart 
-PIECHART_COLS = ['decade', 'rating_category', 'activity_level', 'genres']
+PIECHART_COLS = ['decade', 'rating_category', 'activity_level']
 
 
 available_pie_cols = [col for col in PIECHART_COLS if col in df.columns]
@@ -128,11 +184,14 @@ with st.container():
         title=f"Distribution by {pie_category_col.replace('_', ' ').title()}"
     )
 
+
+st.markdown("---")
+
 #BAR PLOTS 
 
-st.header(" Metric Comparison (Count or Average)")
+st.subheader(" Metric Comparison (Count or Average)")
 
-st.sidebar.header(" Metric Plot Controls")
+st.sidebar.subheader(" Metric Plot Controls")
 
 METRIC_COLS = ['decade', 'activity_level', 'genres'] 
 available_metric_cols = [col for col in METRIC_COLS if col in df.columns]
@@ -159,7 +218,7 @@ metric_category_col = st.sidebar.selectbox(
 
 # --- Visualization ---
 with st.container():
-    plot_bar(
+    plot_plotly_bar(
         df=df,
         category_col=metric_category_col,
         metric_type=metric_type,
@@ -167,12 +226,15 @@ with st.container():
         genre_analysis_df=genre_analysis_df
     )
 
+st.markdown("---")
+
+
+
 
 # ----------------------------------------------------
 #Stacked Count of Ratings by Activity Level
 # ----------------------------------------------------
-st.header("Ratings by customer activity level")
-st.markdown("This chart visualizes how many ratings fall into each Rating Category (Low, Neutral, High) across different Activity Levels (Low, Medium, High).")
+st.subheader("Ratings by customer activity level")
 
 if not df.empty:
     with st.container():
@@ -185,11 +247,12 @@ else:
 
 
 
+st.markdown("---")
 
 # ----------------------------------------------------
 # Correlation heatmap, rating and genres 
 # ----------------------------------------------------
-st.header("Feature Correlation Heatmap")
+st.subheader("Feature Correlation Heatmap")
 
 st.info("The heatmap below shows the correlation between the movie rating, and the presence of each genre. Since a movie can have multiple genres, multi-hot encoding is used.")
 
@@ -199,12 +262,14 @@ with st.container():
         title="Correlation Matrix: Rating and Genres"
     )
 
+st.markdown("---")
+
 
 # ----------------------------------------------------
 # Movie Ranking by weighted rating 
 # ----------------------------------------------------
-st.header("Title Ranking by weighted rating ")
-st.sidebar.header("Ranking Plot Controls")
+st.subheader("Title Ranking by weighted rating ")
+st.sidebar.subheader("Ranking Plot Controls")
 
 
 # 1. Data Preparation: 
@@ -241,12 +306,15 @@ with st.container():
     )
 
 
+st.markdown("---")
 
 
-st.header("Animated Rating Evolution of Top 10 Movies")
+# ANIMATED BAR PLOT 
+
+st.subheader("Animated Rating Evolution of Top 10 Movies")
 st.info("Watch the yearly average rating change for the Top 10 highest-rated movies (by Weighted Rating).")
 
-# CRITICAL CHECK: Ensure both required DataFrames are present before calling the plot
+# Ensure both required DataFrames are present before calling the plot
 if not df.empty and not movies_by_rating.empty:
     with st.container():
         plot_animated_rating_evolution(
@@ -259,11 +327,10 @@ if not df.empty and not movies_by_rating.empty:
 else:
     st.warning("Cannot display animated chart: Both main data (df) and movie statistics (movies_by_rating) are required.")
 
-
+st.markdown("---")
 
 # WORDCLOUD 
-st.title("Word Cloud Visualization")
-
+st.title("Word Cloud Visualization of a related article ")
 
 FIXED_ARTICLE_URL = "https://www.theguardian.com/media/2025/aug/28/bland-easy-to-follow-for-fans-of-everything-what-has-the-netflix-algorithm-done-to-our-films"
 
@@ -297,3 +364,6 @@ try:
 
 except Exception as e:
     st.error(f"An unexpected error occurred during processing: {e}")
+
+
+st.markdown("---")
