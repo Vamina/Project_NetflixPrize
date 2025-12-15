@@ -15,7 +15,7 @@ def plot_plotly_histogram(df, x_col, bins, title):
     Generates a histogram for the numerical variables of the dataset 
     """
     
-    # 1. Create the Plotly Express Histogram
+    # Create the Plotly Express Histogram
     fig = px.histogram(
         df,
         x=x_col,
@@ -27,12 +27,10 @@ def plot_plotly_histogram(df, x_col, bins, title):
     )
     
 
-    # 2. Conditional Fix for Discrete 'rating' Variable
+    # Conditional statement if rating variable - discrete 
     if x_col == 'rating':
-        # This fix forces the bars to align exactly with the integers (1, 2, 3, 4, 5)
-        # by setting custom bins that center on each integer.
         
-        # Manually set the binning: start at 0.5, end at 5.5, size 1.0
+        # Manually set the binning
         fig.update_traces(
             xbins=dict( 
                 start=0.5, 
@@ -47,7 +45,8 @@ def plot_plotly_histogram(df, x_col, bins, title):
             tickvals=[1, 2, 3, 4, 5],
             range=[0.5, 5.5]
         )
-    # 2. Update Axes and Layout 
+
+    # Update Axes and Layout 
     
     # Set the y-axis title to 'Count' and the x-axis title 
     # using the cleaned column name (x_col.replace('_', ' ').title())
@@ -58,14 +57,12 @@ def plot_plotly_histogram(df, x_col, bins, title):
         
         template='plotly_white',
         
-        # Adjusting font size to match your old plot (if necessary)
         font=dict(size=10),
         
-        # Set bar edge color (Plotly uses lines/borders)
         bargap=0.05 # Small gap between bars
     )
     
-    # Display the chart via Streamlit
+    # display chart with streamlit 
     st.plotly_chart(fig, use_container_width=True)
 
 
@@ -78,12 +75,12 @@ def plot_plotly_pie(df, category_col, title):
     Generates a  pie chart for the categorical variables 
     """
     
-    # 1. Calculate counts
+    #  Calculate counts
     category_counts = df[category_col].value_counts().reset_index()
     category_counts.columns = [category_col, 'Count']
 
     
-    # 2. RE-APPLY SORTING METADATA and SORT DATAFRAME
+    # Sort dataframes 
     original_col = df[category_col] 
     
     if pd.api.types.is_categorical_dtype(original_col) and original_col.cat.ordered:
@@ -156,20 +153,20 @@ def plot_plotly_bar(df, category_col, metric_type, title, genre_analysis_df=None
         metric_col_name = 'rating_count'
         y_axis_label = 'Total Ratings (Count)'
 
-    # --------------------------------------------------
+    # conditional statement for category genre - use the dataframe where genres are split 
     if category_col == 'genres':
         
         if genre_analysis_df is None:
-            # Fallback for safety, though it shouldn't happen if coded correctly
+            # Fallback for safety
             st.error("Genre analysis data is missing!")
             return
             
-        # Use the already calculated DataFrame, just select and rename columns
+        
         metric_df = genre_analysis_df.copy()
 
 
     else: 
-    # 1. Data Aggregation: Calculate Count and Average Rating
+    # Data Aggregation: Calculate Count and Average Rating
         metric_df = df.groupby(category_col).agg(
         rating_count=('rating', 'count'),
             rating_avg=('rating', 'mean')
@@ -183,7 +180,7 @@ def plot_plotly_bar(df, category_col, metric_type, title, genre_analysis_df=None
     metric_df[category_col] = metric_df[category_col].astype(str)
 
     
-    # 2. Create the Plotly Bar Chart using Plotly Express (simpler API)
+    # 2. Create the Plotly Bar Chart using Plotly Express
     fig = px.bar(
         metric_df,
         x=category_col, 
@@ -194,18 +191,18 @@ def plot_plotly_bar(df, category_col, metric_type, title, genre_analysis_df=None
         template='plotly_white'
     )
 
-    # 3. Formatting and Layout
+    #  Formatting and Layout
     fig.update_layout(
         height=500,
         xaxis={'categoryorder': 'total descending', 'title': category_col.replace('_', ' ').title()},
         yaxis={'title': y_axis_label}
     )
     
-    # Optional: Set the Y-axis range for Average Rating to be fixed (1-5)
+    # Fix y axis for average rating 
     if metric_type == 'Average Rating':
         fig.update_yaxes(range=[1, 5])
         
-    # 4. Streamlit Display
+    # Display with streamlit 
     st.plotly_chart(fig, use_container_width=True)
 
 
@@ -227,10 +224,9 @@ def plot_plotly_bar_ranking(df, x_col, y_col, title, ascending_order=True):
         color_continuous_scale=px.colors.sequential.Viridis_r,
     )
     
-    # Invert the axis if descending order is desired for visual ranking (highest bar at top)
+    # Invert the axis for visual ranking (highest bar at top)if the order is not ascending 
     if not ascending_order:
-        # 'total ascending' means the smallest value is at the bottom, 
-        # which puts the highest bar (highest rank) at the top of the chart.
+
         fig.update_layout(
             yaxis={'categoryorder':'total ascending'}
         )
@@ -238,7 +234,7 @@ def plot_plotly_bar_ranking(df, x_col, y_col, title, ascending_order=True):
         fig.update_layout(
             yaxis={'categoryorder':'total descending'}
         )
-
+    # set layout 
     fig.update_layout(
         title={
             'text': title,    
@@ -253,7 +249,7 @@ def plot_plotly_bar_ranking(df, x_col, y_col, title, ascending_order=True):
         yaxis=dict( tickfont=dict(size=16) )
     )
 
-
+    # display with streamlit 
     st.plotly_chart(fig, use_container_width=True)
 
 
@@ -275,7 +271,7 @@ def plot_genre_rating_heatmap(df, title):
         
     # 1. Prepare Data (Multi-hot Encoding)
     # ------------------------------------------------------------------
-    # STRICTLY select only 'rating' and 'genres'
+    #  select only 'rating' and 'genres'
     df_encoded = df[required_cols].copy().dropna(subset=required_cols)
     
     if df_encoded.empty:
@@ -308,9 +304,7 @@ def plot_genre_rating_heatmap(df, title):
     df_corr_matrix = df_corr_data.corr()
 
     # 3. Plotting (Using Matplotlib and Seaborn)
-    # ------------------------------------------------------------------
-    
-    # Capture the figure object
+  
     fig, ax = plt.subplots(figsize=(14, 8)) 
     
     sns.heatmap(df_corr_matrix,
@@ -326,7 +320,7 @@ def plot_genre_rating_heatmap(df, title):
     ax.set_ylabel("Features", fontsize=12)
     plt.tight_layout()
     
-    # 4. Display in Streamlit
+    #  Display in Streamlit
     st.pyplot(fig)
     plt.close(fig)
 
@@ -338,13 +332,12 @@ def plot_stacked_activity_rating_count(df, title):
     """
     Generates a vertical bar plot per customer  activity level  with stacked bars - colors correspond to ranking category.
     """
-    # 1. Check for required columns
     required_cols = ['activity_level', 'rating_category']
     if not all(col in df.columns for col in required_cols):
         st.error(f"Cannot create Stacked Bar Chart: Missing one or more required columns ({required_cols}).")
         return
 
-    # 2. Aggregate Data
+    # Aggregate Data
     # Calculate the count of ratings for each combination of Activity Level and Rating Category
     plot_data = (
         df.groupby(required_cols)
@@ -355,7 +348,7 @@ def plot_stacked_activity_rating_count(df, title):
     activity_order = ['Low', 'Medium', 'High']
     category_order = ['Low', 'Neutral', 'High']
     
-    # 3. Create the Plotly Stacked Bar Chart
+    # Create the Plotly Stacked Bar Chart
     fig = px.bar(
         plot_data,
         x='activity_level',
@@ -369,7 +362,7 @@ def plot_stacked_activity_rating_count(df, title):
             'rating_category': category_order
         },
         
-        # Set the color mapping explicitly to ensure the stack order is intuitive
+        # Set the color mapping 
         color_discrete_map={
             'Low': '#fde725',   
             'Neutral': '#21918c',  
@@ -382,7 +375,7 @@ def plot_stacked_activity_rating_count(df, title):
         }
     )
     
-    # 4. Final Formatting
+    # Format layout 
     fig.update_layout(
         xaxis_title="User Activity Level",
         yaxis_title="Total Count of Ratings",
@@ -418,28 +411,24 @@ def plot_animated_rating_evolution(df_main, movies_by_rating):
     
     popular_movie_ids = df_top_movies_stats['movie_id'].tolist()
     
-    # --- 2. Filter the Main DataFrame for the history of these movies ---
+    # Filter the Main DataFrame for the history of these movies 
     df_history = df_main[df_main['movie_id'].isin(popular_movie_ids)].copy()
 
-    # --- 3. Ensure Date Information is Usable ---
-    
-    # We use 'rating_date' as established in your data_loader for consistency
+    # extract the year from rating date 
     if 'rating_date' in df_history.columns:
-        # Since 'rating_date' should already be datetime from load_data, 
-        # we only need to extract the year.
+        
         df_history['rating_year'] = df_history['rating_date'].dt.year 
     else:
         st.warning("Cannot create animated chart: 'rating_date' column missing or invalid.")
         return None
 
-    # --- 4. Aggregate Data by Movie and Year (Average Rating Evolution) ---
+    # Aggregate Data by Movie and Year (Average Rating Evolution)
     movie_ratings_by_year = df_history.groupby(['title', 'rating_year']).agg(
         yearly_count=('rating', 'count'), 
         yearly_avg_rating=('rating', 'mean') 
     ).reset_index()
 
-    # --- 5. Fill Missing Years (Crucial for smooth animation) ---
-    # Creates a full timeline for every movie to avoid jerky animation
+    # Fill Missing Years (Crucial for smooth animation)
     all_years_titles = pd.MultiIndex.from_product(
         [movie_ratings_by_year['title'].unique(), movie_ratings_by_year['rating_year'].unique()],
         names=['title', 'rating_year']
@@ -455,7 +444,7 @@ def plot_animated_rating_evolution(df_main, movies_by_rating):
     # Get the list of unique years in numerical order to set the animation order
     year_order = sorted(plot_data['rating_year'].unique())
 
-    # --- 6. Plotly Figure Creation ---
+    # Create figure with plotly 
     fig = px.bar(
         plot_data,
         x='title',
@@ -468,7 +457,7 @@ def plot_animated_rating_evolution(df_main, movies_by_rating):
         title='Evolution of Average Rating for Top Movies by Year'
     )
 
-    # --- 7. Apply Layout Fixes (Crucial for Chronological Animation) ---
+    # Format layout 
     fig.update_layout(
         xaxis={'categoryorder': 'total descending', 'showticklabels': False}, 
         height=600,
@@ -501,6 +490,8 @@ def plot_animated_rating_evolution(df_main, movies_by_rating):
 
 
 #WORDCLOUD 
+
+# Call wordcloud function 
 
 @st.cache_data
 def load_wordcloud_figure(url):

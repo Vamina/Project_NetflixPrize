@@ -15,16 +15,19 @@ from plotting_utils import (
     load_wordcloud_figure)
 
 st.set_page_config(
-    page_title="Dataset Exploration",
+    page_title="Neflix dataset app",
     page_icon="📊",
     layout="wide"
 )
 
-# --- Data Loading ---
+# Data loading - load the data (that are contained in a dict) and define dfs 
 data_store = load_data()
 df = get_df(data_store, 'main_df')
 movies_by_rating = get_df(data_store, 'movies_by_rating')
 genre_analysis_df = get_df(data_store, 'genre_analysis_df')
+
+
+# Title and presentation text 
 
 st.title("The Netflix Prize Dataset Exploration")
 
@@ -35,13 +38,16 @@ st.markdown("This app presents a subset of the Netflix Prize dataset. The Netfli
 
 ### PART 1 PRESENTATION OF THE DATASET 
 
+#Title 
+
 st.header("The dataset", divider = "yellow")
 st.markdown("This view explains the columns and data types of the primary DataFrame (`df`) used across the application.")
 
-# --- A. Display Column Structure and Types ---
+
+# subtitle 
 st.subheader("DataFrame Columns and Data Types")
 
-# Create a simple DataFrame to display column names and dtypes clearly
+# Display data info 
 column_info = pd.DataFrame({
     'Column Name': df.columns,
     'Data Type': df.dtypes.astype(str)
@@ -51,17 +57,17 @@ st.dataframe(
     column_info, 
     hide_index=True, 
     use_container_width=True,
-    # Optional: Set column widths for better display
     column_config={
         "Column Name": st.column_config.TextColumn(width="large"),
         "Data Type": st.column_config.TextColumn(width="small"),
     }
 )
+
 st.markdown(f"**Total Columns:** {df.shape[1]}")
 
 st.markdown("---")
 
-# --- B. Display Sample Data ---
+# Display the first 10 rows of the data 
 st.subheader("Sample Data (First 10 Rows)")
 st.caption("A small preview of the data content.")
 
@@ -80,18 +86,27 @@ if df.empty or movies_by_rating.empty:
 
 ## PART 2 VISUALIZATION
 
+#title
+
 st.header("Data visualization", divider = "yellow")
 
 # SIDEBAR HEADER 
 
 st.sidebar.header("Plot controls ")
+
+
+#PLOTS NOW 
+
+
+
 # ----------------------------------------------------
 # Histogram with Interactive Menu 
 # ----------------------------------------------------
+
 st.subheader("Numerical distribution - Histogram")
 
 
-# --- Sidebar Controls for Section 1 ---
+# Sidebar controls for histo
 st.sidebar.subheader("Histogram Controls")
 
 HISTOGRAM_COLS = ['rating', 'year', 'rating_date']
@@ -102,6 +117,8 @@ HISTOGRAM_COLS = ['rating', 'year', 'rating_date']
 available_cols = [col for col in HISTOGRAM_COLS if col in df.columns]
 
 
+# Selectbox: 
+
 # Determine the default index
 try:
     default_index = available_cols.index('rating')
@@ -110,7 +127,7 @@ except ValueError:
 
 histogram_x_col = st.sidebar.selectbox(
     "Select X-axis Column:", 
-    options=available_cols, # Use the limited, filtered list
+    options=available_cols, 
     index=default_index,
     key='hist_x_col'
 )
@@ -124,7 +141,7 @@ except ValueError:
     default_index = 0
 
 
-
+# histogram parameters 
 histogram_bins = st.sidebar.slider(
     "Number of Bins:", 
     min_value=5, 
@@ -134,7 +151,7 @@ histogram_bins = st.sidebar.slider(
     key='hist_bins'
 )
 
-# --- Visualization ---
+# Call the plotly plot 
 with st.container():
     plot_plotly_histogram(
         df=df, 
@@ -149,11 +166,11 @@ st.markdown("---")
 
 
 # ----------------------------------------------------
-# Categorical Distribution 
+# Pie chart 
 # ----------------------------------------------------
 st.subheader("Categorical Distribution - Pie Chart")
 
-# --- Sidebar Controls for Section 3 ---
+# Sidebar control for pie chart 
 st.sidebar.subheader("Pie Chart Controls")
 
 # Define columns for pie chart 
@@ -162,6 +179,7 @@ PIECHART_COLS = ['decade', 'rating_category', 'activity_level']
 
 available_pie_cols = [col for col in PIECHART_COLS if col in df.columns]
 
+#Selectbox 
 # Set the default selection to 'decade' if available, otherwise the first available column
 try:
     default_pie_index = available_pie_cols.index('rating_category')
@@ -175,9 +193,8 @@ pie_category_col = st.sidebar.selectbox(
     key='pie_category'
 )
 
-# --- Visualization ---
+# Call the plotly plot 
 with st.container():
-    # Call the plotting function
     plot_plotly_pie(
         df=df,
         category_col=pie_category_col,
@@ -187,7 +204,9 @@ with st.container():
 
 st.markdown("---")
 
-#BAR PLOTS 
+# --------------------------------------
+# Bar plot with options 
+# -----------------------------------
 
 st.subheader(" Metric Comparison (Count or Average)")
 
@@ -201,14 +220,14 @@ if not available_metric_cols:
     st.stop()
 
 
-# 4a. Metric Type Selection
+# Metric Type Selection
 metric_type = st.sidebar.radio(
     "Select Metric to Visualize:",
     options=['Total Ratings (Count)', 'Average Rating'],
     key='metric_radio'
 )
 
-# 4b. Category Selection
+# Category Selection
 metric_category_col = st.sidebar.selectbox(
     "Select Category to Group By:", 
     options=available_metric_cols,
@@ -216,7 +235,7 @@ metric_category_col = st.sidebar.selectbox(
     key='metric_category_select'
 )
 
-# --- Visualization ---
+# Call the plotly plot 
 with st.container():
     plot_plotly_bar(
         df=df,
@@ -234,6 +253,7 @@ st.markdown("---")
 # ----------------------------------------------------
 #Stacked Count of Ratings by Activity Level
 # ----------------------------------------------------
+
 st.subheader("Ratings by customer activity level")
 
 if not df.empty:
@@ -252,13 +272,14 @@ st.markdown("---")
 # ----------------------------------------------------
 # Correlation heatmap, rating and genres 
 # ----------------------------------------------------
+
 st.subheader("Feature Correlation Heatmap")
 
 st.info("The heatmap below shows the correlation between the movie rating, and the presence of each genre. Since a movie can have multiple genres, multi-hot encoding is used.")
 
 with st.container():
     plot_genre_rating_heatmap(
-        df=df, # Pass your main DataFrame
+        df=df, 
         title="Correlation Matrix: Rating and Genres"
     )
 
@@ -268,22 +289,22 @@ st.markdown("---")
 # ----------------------------------------------------
 # Movie Ranking by weighted rating 
 # ----------------------------------------------------
+
 st.subheader("Title Ranking by weighted rating ")
 st.sidebar.subheader("Ranking Plot Controls")
 
 
-# 1. Data Preparation: 
+# Data Preparation: 
 ranking_df = movies_by_rating.copy()
 
-# Ensure the ranking is performed on a full dataset first before slicing
 ranking_df = ranking_df.sort_values(by='weighted_rating', ascending=False)
 
 
-# 2. Base Limit (Top 20): Filter the data to the top 20 ranked entries
+#  Filter the data to the top n ranked entries
 ranking_base = ranking_df.head(20)
 
 
-# 3. Sidebar Slider for Visualization Count
+# Sidebar 
 num_to_display = st.sidebar.slider(
     "Select number of top movies to visualize:",
     min_value=1,
@@ -292,10 +313,10 @@ num_to_display = st.sidebar.slider(
     step=1
 )
 
-# 4. Final Filtering based on Slider
+# Filtering based on slide value 
 final_ranking_df = ranking_base.head(num_to_display)
 
-# 5. Visualization: Call your ranking function
+# Call the plotly plot 
 with st.container():
     plot_plotly_bar_ranking(
         df=final_ranking_df,
@@ -309,13 +330,15 @@ with st.container():
 st.markdown("---")
 
 
-# ANIMATED BAR PLOT 
+# ------------------------------------
+# Animated plot bar 
+# -----------------------------------
 
 st.subheader("Animated Rating Evolution of Top 10 Movies")
 st.info("Watch the yearly average rating change for the Top 10 highest-rated movies (by Weighted Rating).")
-
-# Ensure both required DataFrames are present before calling the plot
+# check  required dataframes 
 if not df.empty and not movies_by_rating.empty:
+    # call plot 
     with st.container():
         plot_animated_rating_evolution(
             # df_main is the full history of all ratings
@@ -329,7 +352,11 @@ else:
 
 st.markdown("---")
 
+# ------------------------
 # WORDCLOUD 
+# -------------
+
+
 st.title("Word Cloud Visualization of a related article ")
 
 FIXED_ARTICLE_URL = "https://www.theguardian.com/media/2025/aug/28/bland-easy-to-follow-for-fans-of-everything-what-has-the-netflix-algorithm-done-to-our-films"
@@ -337,7 +364,7 @@ FIXED_ARTICLE_URL = "https://www.theguardian.com/media/2025/aug/28/bland-easy-to
 
 
 
-# 1. Input Widget: this is a read-only input box that shows the article we used 
+# Input Widget: this is a read-only input box that shows the article we used 
 st.text_input(
     "Source Article URL:", 
     value=FIXED_ARTICLE_URL,
@@ -347,13 +374,13 @@ st.text_input(
 
 st.header("Generated Word Cloud")
 
-# --- Start Automatic Figure Generation/Display ---
+
 try:
-    # 3. Call the function using the FIXED_ARTICLE_URL
+    #  Call the function using the FIXED_ARTICLE_URL
     with st.spinner('Scraping and generating Word Cloud...'):
         figure = load_wordcloud_figure(FIXED_ARTICLE_URL)
     
-    # 4. Display the result
+    #  Display the result
     if figure:
         st.pyplot(figure)
         plt.close(figure)

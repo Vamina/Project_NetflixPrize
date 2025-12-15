@@ -8,6 +8,9 @@ from bs4 import BeautifulSoup
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 
+
+# Define stopwords list 
+
 STOPWORDS: Set[str] = {
     "the", "and", "a", "an", "in", "on", "of", "for", "to", "from", "with", "at",
     "by", "is", "it", "this", "that", "as", "be", "are", "was", "were", "or", "but",
@@ -16,7 +19,7 @@ STOPWORDS: Set[str] = {
     "again", "once", "because", "about"
 }
 
-
+# function to fix first words of paragraph 
 def fix_first_word(text: str) -> str:
     """
     Fix the first word in a paragraph if it contains an internal misplaced space
@@ -41,7 +44,7 @@ def fix_first_word(text: str) -> str:
         return text[0] + text[2] + text[3:]
     return text
 
-
+#cleaning function / tokenization 
 def clean_for_wordcloud(text: str) -> List[str]:
     """
     Normalize and sanitize raw text so it can be used for word cloud generation.
@@ -71,7 +74,7 @@ def clean_for_wordcloud(text: str) -> List[str]:
 
     return text.split()
 
-
+# generate the wordcloud 
 def generate_wordcloud(words: List[str]):
     """
     Generate and display a word cloud from a list of words.
